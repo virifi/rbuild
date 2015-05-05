@@ -1,0 +1,12 @@
+{
+	"repositories": [
+		{
+			"name": "virifi/dmirror-agent",
+			"path": "../out/sample_repo"
+		},
+		{
+			"name": "virifi/dmirror",
+			"path": "../out/sample_repo2"
+		}
+	]
+}
