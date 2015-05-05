@@ -23,10 +23,10 @@ func NewBotServer(botCmdAbsPath string, repos []Repository) (*BotServer, error) 
 }
 
 type BuildWork struct {
-	RepoName string `json:"repo_name"`
-	Branch   string `json:"branch"`
-	Commit   string `json:"commit"`
-	Command  string `json:"command"`
+	RepoName string   `json:"repo_name"`
+	Branch   string   `json:"branch"`
+	Commit   string   `json:"commit"`
+	Commands []string `json:"commands"`
 }
 
 func (bs *BotServer) ServeConn(conn net.Conn) {
@@ -64,6 +64,10 @@ func (bs *BotServer) ServeConn(conn net.Conn) {
 		log.Println("Could not find repository")
 		return
 	}
+	if len(work.Commands) == 0 {
+		log.Println("Commands is empty")
+		return
+	}
 
 	outStream, err := session.Accept()
 	if err != nil {
@@ -86,7 +90,7 @@ func (bs *BotServer) ServeConn(conn net.Conn) {
 	}
 	defer statusCodeConn.Close()
 
-	bc := NewBotWorkerClient(bs.botCmdPath, repo.Name, repo.AbsPath, work.Branch, work.Commit, work.Command)
+	bc := NewBotWorkerClient(bs.botCmdPath, repo.Name, repo.AbsPath, work.Branch, work.Commit, work.Commands)
 	err = bc.Run(outStream, errStream)
 	exitStatus := 0
 	if err != nil {

@@ -9,14 +9,16 @@ type BotWorkerClient interface {
 	Run(outStream, errStream io.Writer) error
 }
 
-func NewBotWorkerClient(botCmdPath, repoName, repoAbsPath, branch, commit, command string) BotWorkerClient {
-	cmd := exec.Command(
-		botCmdPath, "-worker",
+func NewBotWorkerClient(botCmdPath, repoName, repoAbsPath, branch, commit string, commands []string) BotWorkerClient {
+	var args []string
+	args = append(args,
+		"-worker",
 		"-repo", repoName,
 		"-repopath", repoAbsPath,
 		"-branch", branch,
-		"-commit", commit,
-		"-command", command)
+		"-commit", commit)
+	args = append(args, commands...)
+	cmd := exec.Command(botCmdPath, args...)
 	return &botWorkerClient{cmd}
 }
 

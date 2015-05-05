@@ -35,9 +35,9 @@ func (bw *BotWorker) Checkout(repoName, branch, commit string) error {
 	return nil
 }
 
-func (bw *BotWorker) Run(command string) error {
+func (bw *BotWorker) Run(name string, args ...string) error {
 	log.Println("BotWorker#Run")
-	return bw.runCommand(command)
+	return bw.runCommand(name, args...)
 }
 
 func (bw *BotWorker) cwdIsGitDir() bool {

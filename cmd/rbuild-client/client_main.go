@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 6 {
+	if len(os.Args) < 6 {
 		fmt.Printf("Usage: %s <bot address> <repository name> <branch> <commit> <command>\n", os.Args[0])
 		os.Exit(1)
 	}
@@ -22,7 +22,7 @@ func main() {
 	repoName := os.Args[2]
 	branch := os.Args[3]
 	commit := os.Args[4]
-	command := os.Args[5]
+	commands := os.Args[5:]
 
 	conn, err := net.Dial("tcp", botAddr)
 	if err != nil {
@@ -51,7 +51,7 @@ func main() {
 		RepoName: repoName,
 		Branch:   branch,
 		Commit:   commit,
-		Command:  command,
+		Commands: commands,
 	}
 	enc := json.NewEncoder(buildWorkStream)
 	err = enc.Encode(work)

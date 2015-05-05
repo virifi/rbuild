@@ -48,8 +48,6 @@ func (c *CLI) Run(args []string) int {
 	flags.StringVar(&workerBranch, "branch", "", "Branch to build [Only effective in worker mode]")
 	var workerCommit string
 	flags.StringVar(&workerCommit, "commit", "", "Commit sha1 to build [Only effective in worker mode]")
-	var workerCommand string
-	flags.StringVar(&workerCommand, "command", "", "Build command [Only effective in worker mode]")
 
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeParseFlagError
@@ -61,7 +59,8 @@ func (c *CLI) Run(args []string) int {
 	}
 
 	if worker {
-		return c.runWorker(workerRepoName, workerRepoAbsPath, workerBranch, workerCommit, workerCommand)
+		workerCommands := flags.Args()
+		return c.runWorker(workerRepoName, workerRepoAbsPath, workerBranch, workerCommit, workerCommands)
 	}
 
 	if len(flags.Args()) != 1 {
@@ -159,7 +158,7 @@ func (c *CLI) runServer(addr string, cmdAbsPath string, repos []rbuild.Repositor
 	return ExitCodeOK
 }
 
-func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit, command string) int {
+func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit string, commands []string) int {
 	if _, err := os.Stat(repoAbsPath); err != nil {
 		err := os.MkdirAll(repoAbsPath, 0755)
 		if err != nil {
@@ -179,7 +178,8 @@ func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit, command string) i
 		fmt.Fprintf(c.errStream, "Checking out failed : %v\n", err)
 		return ExitCodeError
 	}
-	err = bw.Run(command)
+
+	err = bw.Run(commands[0], commands[1:]...)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "Worker finished with error : %v\n", err)
 		return ExitCodeWorkerError
