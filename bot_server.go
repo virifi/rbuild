@@ -17,9 +17,9 @@ type BotServer struct {
 	repos      []Repository
 }
 
-func NewBotServer(botCmdAbsPath string, repos []Repository) (*BotServer, error) {
+func NewBotServer(botCmdPath string, repos []Repository) (*BotServer, error) {
 	pp.Println(repos)
-	return &BotServer{botCmdPath: botCmdAbsPath, repos: repos}, nil
+	return &BotServer{botCmdPath: botCmdPath, repos: repos}, nil
 }
 
 type BuildWork struct {

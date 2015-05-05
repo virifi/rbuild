@@ -79,13 +79,9 @@ func (c *CLI) Run(args []string) int {
 		return ExitCodeParseConfigError
 	}
 
-	cmdAbsPath, err := filepath.Abs(args[0])
-	if err != nil {
-		fmt.Fprintf(c.errStream, "Could not get absolute path for bot cmd : %v\n", err)
-		return ExitCodeError
-	}
+	cmdPath := args[0]
 
-	return c.runServer(port, cmdAbsPath, repos)
+	return c.runServer(port, cmdPath, repos)
 }
 
 type Config struct {
@@ -131,7 +127,7 @@ func parseConfigFile(configAbsPath string) (int, []rbuild.Repository, error) {
 	return conf.Port, repos, nil
 }
 
-func (c *CLI) runServer(port int, cmdAbsPath string, repos []rbuild.Repository) int {
+func (c *CLI) runServer(port int, cmdPath string, repos []rbuild.Repository) int {
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		fmt.Fprintf(c.errStream, "listen failed : %v\n", err)
@@ -139,7 +135,7 @@ func (c *CLI) runServer(port int, cmdAbsPath string, repos []rbuild.Repository) 
 	}
 	defer l.Close()
 
-	botSrv, err := rbuild.NewBotServer(cmdAbsPath, repos)
+	botSrv, err := rbuild.NewBotServer(cmdPath, repos)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "new bot server failed : %v\n", err)
 		return ExitCodeInvalidConfigError
