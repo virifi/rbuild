@@ -1,4 +1,5 @@
 {
+	"address": "localhost:8090",
 	"repositories": [
 		{
 			"name": "virifi/dmirror-agent",

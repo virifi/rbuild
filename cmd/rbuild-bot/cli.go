@@ -74,7 +74,7 @@ func (c *CLI) Run(args []string) int {
 		fmt.Fprintf(c.errStream, "Could not get absolute path for config file : %v\n", err)
 		return ExitCodeError
 	}
-	repos, err := parseConfigFile(configAbsPath)
+	addr, repos, err := parseConfigFile(configAbsPath)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "Parsing config file failed : %v\n", err)
 		return ExitCodeParseConfigError
@@ -86,10 +86,11 @@ func (c *CLI) Run(args []string) int {
 		return ExitCodeError
 	}
 
-	return c.runServer(cmdAbsPath, repos)
+	return c.runServer(addr, cmdAbsPath, repos)
 }
 
 type Config struct {
+	Address      string       `json:"address"`
 	Repositories []Repository `json:"repositories"`
 }
 type Repository struct {
@@ -97,30 +98,30 @@ type Repository struct {
 	Path string `json:"path"`
 }
 
-func parseConfigFile(configAbsPath string) ([]rbuild.Repository, error) {
+func parseConfigFile(configAbsPath string) (string, []rbuild.Repository, error) {
 	f, err := os.Open(configAbsPath)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
 	var conf Config
 	err = dec.Decode(&conf)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	if len(conf.Repositories) == 0 {
-		return nil, errNoRepositories
+		return "", nil, errNoRepositories
 	}
 
 	configDir := filepath.Dir(configAbsPath)
 	repos := make([]rbuild.Repository, 0)
 	for _, r := range conf.Repositories {
 		if len(r.Name) == 0 {
-			return nil, fmt.Errorf("name is empty")
+			return "", nil, fmt.Errorf("name is empty")
 		}
 		if len(r.Path) == 0 {
-			return nil, fmt.Errorf("path is empty")
+			return "", nil, fmt.Errorf("path is empty")
 		}
 		absPath := filepath.Join(configDir, r.Path)
 		repos = append(repos, rbuild.Repository{
@@ -128,11 +129,11 @@ func parseConfigFile(configAbsPath string) ([]rbuild.Repository, error) {
 			AbsPath: absPath,
 		})
 	}
-	return repos, nil
+	return conf.Address, repos, nil
 }
 
-func (c *CLI) runServer(cmdAbsPath string, repos []rbuild.Repository) int {
-	l, err := net.Listen("tcp", "localhost:8080")
+func (c *CLI) runServer(addr string, cmdAbsPath string, repos []rbuild.Repository) int {
+	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		fmt.Fprintf(c.errStream, "listen failed : %v\n", err)
 		return ExitCodeListenError
