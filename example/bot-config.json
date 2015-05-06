@@ -2,12 +2,12 @@
 	"port": 8090,
 	"repositories": [
 		{
-			"name": "virifi/dmirror-agent",
-			"path": "../out/sample_repo"
+			"name": "virifi/sample_repo",
+			"path": "path/from/config"
 		},
 		{
-			"name": "virifi/dmirror",
-			"path": "../out/sample_repo2"
+			"name": "virifi/sample_repo2",
+			"path": "sample_repo2"
 		}
 	]
 }
