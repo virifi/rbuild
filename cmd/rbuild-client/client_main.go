@@ -27,7 +27,7 @@ func main() {
 	conn, err := net.Dial("tcp", botAddr)
 	if err != nil {
 		log.Println("Connecting to bot failed :", err)
-		return
+		os.Exit(1)
 	}
 	defer conn.Close()
 
@@ -36,14 +36,14 @@ func main() {
 	session, err := yamux.Client(conn, defConfig)
 	if err != nil {
 		log.Println("yamux.Client failed :", err)
-		return
+		os.Exit(1)
 	}
 	defer session.Close()
 
 	buildWorkStream, err := session.Open()
 	if err != nil {
 		log.Println("Could not open buildWorkStream :", err)
-		return
+		os.Exit(1)
 	}
 	defer buildWorkStream.Close()
 
@@ -57,27 +57,27 @@ func main() {
 	err = enc.Encode(work)
 	if err != nil {
 		log.Println("Could not write BuildWork :", err)
-		return
+		os.Exit(1)
 	}
 
 	outStream, err := session.Open()
 	if err != nil {
 		log.Println("Could not open outStream :", err)
-		return
+		os.Exit(1)
 	}
 	defer outStream.Close()
 
 	errStream, err := session.Open()
 	if err != nil {
 		log.Println("Could not open errStream :", err)
-		return
+		os.Exit(1)
 	}
 	defer errStream.Close()
 
 	exitStatusStream, err := session.Open()
 	if err != nil {
 		log.Println("Could not open exitStatusStream :", err)
-		return
+		os.Exit(1)
 	}
 	defer exitStatusStream.Close()
 
@@ -87,7 +87,7 @@ func main() {
 	err = binary.Read(exitStatusStream, binary.BigEndian, &exitStatus)
 	if err != nil {
 		log.Println("Reading exit status failed :", err)
-		return
+		os.Exit(1)
 	}
 	os.Exit(int(exitStatus))
 }
