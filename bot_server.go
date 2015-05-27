@@ -90,7 +90,11 @@ func (bs *BotServer) ServeConn(conn net.Conn) {
 	}
 	defer statusCodeConn.Close()
 
-	bc := NewBotWorkerClient(bs.botCmdPath, repo.Name, repo.AbsPath, work.Branch, work.Commit, work.Commands)
+	bc, err := NewBotWorkerClient(bs.botCmdPath, repo.Name, repo.AbsPath, work.Branch, work.Commit, work.Commands, repo.Env)
+	if err != nil {
+		log.Println("NewBotWorkerClient failed :", err)
+		return
+	}
 	err = bc.Run(outStream, errStream)
 	exitStatus := 0
 	if err != nil {

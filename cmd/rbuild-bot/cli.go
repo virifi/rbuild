@@ -22,6 +22,7 @@ const (
 	ExitCodeInvalidConfigError
 	ExitCodeAcceptError
 	ExitCodeWorkerError
+	ExitCodeParseEnvJsonError
 )
 
 var errNoRepositories = errors.New("There are no repositories.")
@@ -48,6 +49,8 @@ func (c *CLI) Run(args []string) int {
 	flags.StringVar(&workerBranch, "branch", "", "Branch to build [Only effective in worker mode]")
 	var workerCommit string
 	flags.StringVar(&workerCommit, "commit", "", "Commit sha1 to build [Only effective in worker mode]")
+	var workerEnv string
+	flags.StringVar(&workerEnv, "env", "", "EnvItem json [Only effective in worker mode]")
 
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeParseFlagError
@@ -59,8 +62,13 @@ func (c *CLI) Run(args []string) int {
 	}
 
 	if worker {
+		var envItems []rbuild.EnvItem
+		if err := json.Unmarshal([]byte(workerEnv), &envItems); err != nil {
+			fmt.Fprintf(c.errStream, "Parsing env json failed : %v\n", err)
+			return ExitCodeParseEnvJsonError
+		}
 		workerCommands := flags.Args()
-		return c.runWorker(workerRepoName, workerRepoAbsPath, workerBranch, workerCommit, workerCommands)
+		return c.runWorker(workerRepoName, workerRepoAbsPath, workerBranch, workerCommit, envItems, workerCommands)
 	}
 
 	if len(flags.Args()) != 1 {
@@ -89,8 +97,14 @@ type Config struct {
 	Repositories []Repository `json:"repositories"`
 }
 type Repository struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name string    `json:"name"`
+	Path string    `json:"path"`
+	Env  []EnvItem `json:"env"`
+}
+type EnvItem struct {
+	Name    string `json:"name"`
+	Value   string `json:"value"`
+	Prepend bool   `json:"prepend"`
 }
 
 func parseConfigFile(configAbsPath string) (int, []rbuild.Repository, error) {
@@ -119,11 +133,18 @@ func parseConfigFile(configAbsPath string) (int, []rbuild.Repository, error) {
 			return 0, nil, fmt.Errorf("path is empty")
 		}
 		absPath := filepath.Join(configDir, r.Path)
+
+		env := make([]rbuild.EnvItem, 0)
+		for _, item := range r.Env {
+			env = append(env, rbuild.EnvItem{item.Name, item.Value, item.Prepend})
+		}
 		repos = append(repos, rbuild.Repository{
 			Name:    r.Name,
 			AbsPath: absPath,
+			Env:     env,
 		})
 	}
+
 	return conf.Port, repos, nil
 }
 
@@ -154,7 +175,7 @@ func (c *CLI) runServer(port int, cmdPath string, repos []rbuild.Repository) int
 	return ExitCodeOK
 }
 
-func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit string, commands []string) int {
+func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit string, env []rbuild.EnvItem, commands []string) int {
 	if _, err := os.Stat(repoAbsPath); err != nil {
 		err := os.MkdirAll(repoAbsPath, 0755)
 		if err != nil {
@@ -167,7 +188,7 @@ func (c *CLI) runWorker(repoName, repoAbsPath, branch, commit string, commands [
 		return ExitCodeError
 	}
 
-	bw := rbuild.NewBotWorker(c.outStream, c.errStream)
+	bw := rbuild.NewBotWorker(c.outStream, c.errStream, env)
 	fmt.Fprintf(c.errStream, "Checking out\nrepo : %v\nbranch : %v\ncommit : %v\n", repoName, branch, commit)
 	err := bw.Checkout(repoName, branch, commit)
 	if err != nil {

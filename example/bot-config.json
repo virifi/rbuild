@@ -8,6 +8,21 @@
 		{
 			"name": "virifi/sample_repo2",
 			"path": "sample_repo2"
+		},
+		{
+			"name": "virifi/sample_repo3",
+			"path": "hogehoge",
+			"env": [
+				{
+					"name": "PATH",
+					"value": "/usr/local/hoge/bin",
+					"prepend": true
+				},
+				{
+					"name": "PATH",
+					"value": "/usr/local/hoge/bin2"
+				}
+			]
 		}
 	]
 }

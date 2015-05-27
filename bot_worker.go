@@ -12,10 +12,11 @@ import (
 type BotWorker struct {
 	outStream io.Writer
 	errStream io.Writer
+	env       []string
 }
 
-func NewBotWorker(outStream, errStream io.Writer) *BotWorker {
-	return &BotWorker{outStream: outStream, errStream: errStream}
+func NewBotWorker(outStream, errStream io.Writer, env []EnvItem) *BotWorker {
+	return &BotWorker{outStream: outStream, errStream: errStream, env: mergeEnv(os.Environ(), env)}
 }
 
 func (bw *BotWorker) Checkout(repoName, branch, commit string) error {
@@ -61,6 +62,9 @@ func (bw *BotWorker) checkoutCommit(commitSha1 string) error {
 func (bw *BotWorker) runCommand(name string, args ...string) error {
 	fmt.Fprintf(bw.outStream, "Running command %s %s\n", name, strings.Join(args, " "))
 	cmd := exec.Command(name, args...)
+	if bw.env != nil {
+		cmd.Env = bw.env
+	}
 	cmd.Stdout = bw.outStream
 	cmd.Stderr = bw.errStream
 	return cmd.Run()
