@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -136,7 +137,8 @@ func parseConfigFile(configAbsPath string) (int, []rbuild.Repository, error) {
 
 		env := make([]rbuild.EnvItem, 0)
 		for _, item := range r.Env {
-			env = append(env, rbuild.EnvItem{item.Name, item.Value, item.Prepend})
+			replacedVal := strings.Replace(item.Value, "##RBUILD_CONF_DIR##", configDir, -1)
+			env = append(env, rbuild.EnvItem{item.Name, replacedVal, item.Prepend})
 		}
 		repos = append(repos, rbuild.Repository{
 			Name:    r.Name,
